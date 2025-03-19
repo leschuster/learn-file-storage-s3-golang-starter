@@ -5,8 +5,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
 	"github.com/google/uuid"
@@ -44,9 +42,15 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 	}
 	defer file.Close()
 
-	mediaType := header.Header.Get("Content-Type")
-	if mediaType == "" {
+	contentType := header.Header.Get("Content-Type")
+	if contentType == "" {
 		respondWithError(w, http.StatusBadRequest, "Missing Content-Type for thumbnail", nil)
+		return
+	}
+
+	mediaType, err := getMediaType(contentType)
+	if err != nil || (mediaType != "image/jpeg" && mediaType != "image/png") {
+		respondWithError(w, http.StatusBadRequest, "Wrong media type of file", nil)
 		return
 	}
 
@@ -60,7 +64,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	assetPath := getAssetPath(videoID, mediaType)
+	assetPath := getAssetPath(mediaType)
 	assetDiskPath := cfg.getAssetDiskPath(assetPath)
 
 	dst, err := os.Create(assetDiskPath)
