@@ -66,25 +66,39 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	dst, err := os.CreateTemp("", "tubely-upload.mp4")
+	tempFile, err := os.CreateTemp("", "tubely-upload.mp4")
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "could not create temp file", err)
 		return
 	}
-	defer os.Remove(dst.Name())
-	defer dst.Close()
+	defer os.Remove(tempFile.Name())
+	defer tempFile.Close()
 
-	if _, err = io.Copy(dst, file); err != nil {
+	if _, err = io.Copy(tempFile, file); err != nil {
 		respondWithError(w, http.StatusInternalServerError, "could not write to file", err)
 		return
 	}
 
-	if _, err = dst.Seek(0, io.SeekStart); err != nil {
+	if _, err = tempFile.Seek(0, io.SeekStart); err != nil {
 		respondWithError(w, http.StatusInternalServerError, "could not reset file pointer", err)
 		return
 	}
 
-	prefix, err := getPrefix(dst.Name())
+	processedFilePath, err := processVideoForFastStart(tempFile.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not preprocess video file", err)
+		return
+	}
+	defer os.Remove(processedFilePath)
+
+	processedFile, err := os.Open(processedFilePath)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not read temp file", err)
+		return
+	}
+	defer processedFile.Close()
+
+	prefix, err := getPrefix(processedFilePath)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "could not analyze aspect ratio", err)
 		return
@@ -95,7 +109,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 	_, err = cfg.s3Client.PutObject(r.Context(), &s3.PutObjectInput{
 		Bucket:      aws.String(cfg.s3Bucket),
 		Key:         aws.String(key),
-		Body:        dst,
+		Body:        processedFile,
 		ContentType: aws.String(mediaType),
 	})
 	if err != nil {
