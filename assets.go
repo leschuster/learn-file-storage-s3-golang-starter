@@ -25,6 +25,10 @@ func (cfg apiConfig) getAssetURL(assetPath string) string {
 	return fmt.Sprintf("http://localhost:%s/assets/%s", cfg.port, assetPath)
 }
 
+func (cfg apiConfig) getObjectURL(key string) string {
+	return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", cfg.s3Bucket, cfg.s3Region, key)
+}
+
 func getMediaType(contentType string) (mediaType string, err error) {
 	mediaType, _, err = mime.ParseMediaType(contentType)
 	return

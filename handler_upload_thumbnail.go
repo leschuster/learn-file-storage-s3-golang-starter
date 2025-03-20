@@ -60,7 +60,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	if video.UserID != userID {
-		respondWithError(w, http.StatusUnauthorized, "That's not your video", err)
+		respondWithError(w, http.StatusUnauthorized, "That's not your video", nil)
 		return
 	}
 
