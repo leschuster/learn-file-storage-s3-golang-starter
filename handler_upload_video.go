@@ -84,7 +84,13 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	key := getAssetPath(mediaType)
+	prefix, err := getPrefix(dst.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not analyze aspect ratio", err)
+		return
+	}
+
+	key := prefix + "/" + getAssetPath(mediaType)
 
 	_, err = cfg.s3Client.PutObject(r.Context(), &s3.PutObjectInput{
 		Bucket:      aws.String(cfg.s3Bucket),
@@ -107,4 +113,20 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 
 	respondWithJSON(w, http.StatusOK, video)
 
+}
+
+func getPrefix(filepath string) (string, error) {
+	ratio, err := getVideoAspectRatio(filepath)
+	if err != nil {
+		return "", err
+	}
+	fmt.Println(ratio)
+
+	if ratio == "16:9" {
+		return "landscape", nil
+	} else if ratio == "9:16" {
+		return "portrait", nil
+	} else {
+		return "other", nil
+	}
 }
