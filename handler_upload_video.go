@@ -42,6 +42,12 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	video, err = cfg.dbVideoToSignedVideo(video)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not create signed url", err)
+		return
+	}
+
 	fmt.Println("uploading video", videoID, "by user", userID)
 
 	const maxMemory = 1 << 30 // 1 GiB
@@ -117,7 +123,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	url := cfg.getObjectURL(key)
+	url := cfg.getObjectLocator(key)
 	video.VideoURL = &url
 
 	if err = cfg.db.UpdateVideo(video); err != nil {
