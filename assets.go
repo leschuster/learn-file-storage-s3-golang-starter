@@ -1,19 +1,13 @@
 package main
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"mime"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
-
-	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
 )
 
 func (cfg apiConfig) ensureAssetsDir() error {
@@ -39,6 +33,7 @@ func (cfg apiConfig) getObjectLocator(key string) string {
 	return fmt.Sprintf("%s,%s", cfg.s3Bucket, key)
 }
 
+/*
 func (cfg apiConfig) dbVideoToSignedVideo(video database.Video) (database.Video, error) {
 	if video.VideoURL == nil {
 		return video, nil
@@ -59,7 +54,9 @@ func (cfg apiConfig) dbVideoToSignedVideo(video database.Video) (database.Video,
 	video.VideoURL = &presignedUrl
 	return video, nil
 }
+*/
 
+/*
 func generatePresignedURL(s3Client *s3.Client, bucket, key string, expireTime time.Duration) (string, error) {
 	presignClient := s3.NewPresignClient(s3Client)
 	req, err := presignClient.PresignGetObject(context.Background(), &s3.GetObjectInput{
@@ -71,6 +68,7 @@ func generatePresignedURL(s3Client *s3.Client, bucket, key string, expireTime ti
 	}
 	return req.URL, nil
 }
+*/
 
 func getMediaType(contentType string) (mediaType string, err error) {
 	mediaType, _, err = mime.ParseMediaType(contentType)
